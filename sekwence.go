@@ -2,12 +2,16 @@ package sekwence
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
 )
 
 var (
 	asciiLowerCase = []rune("abcdefghijklmnopqrstuvwxyz")
 	asciiUpperCase = []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 	alphaNum       = []rune("0123456789")
+
+	singleExpr = regexp.MustCompile(`^([0-9a-zA-Z]+)\.\.([0-9a-zA-Z]+)$`)
 )
 
 func runeIndex(slice []rune, item rune) int {
@@ -114,7 +118,7 @@ func Succ(s string) (string, error) {
 }
 
 // StringRange implements ruby-like string range generators
-// i.e. ruby's "a0".."e4" equals to StringRange("a0", "e4", false)
+// i.e. ruby's ("a0".."e4").to_a equals to StringRange("a0", "e4", false)
 // exclude params indicates that value of "to" should be excluded
 //
 func StringRange(from string, to string, exclude bool) ([]string, error) {
@@ -131,6 +135,30 @@ func StringRange(from string, to string, exclude bool) ([]string, error) {
 
 	if from == to && !exclude {
 		result = append(result, from)
+	}
+	return result, nil
+}
+
+func expandSinglePattern(pattern string) ([]string, error) {
+	if strings.HasPrefix(pattern, "{") && strings.HasSuffix(pattern, "}") {
+		pattern = pattern[1 : len(pattern)-1]
+	}
+	tokens := strings.Split(pattern, ",")
+	result := make([]string, 0)
+
+	for _, token := range tokens {
+		corners := singleExpr.FindStringSubmatch(token)
+		if len(corners) == 0 {
+			result = append(result, token)
+		} else {
+			from := corners[1]
+			to := corners[2]
+			rng, err := StringRange(from, to, false)
+			if err != nil {
+				return nil, fmt.Errorf("can't parse expression %s", token)
+			}
+			result = append(result, rng...)
+		}
 	}
 	return result, nil
 }
