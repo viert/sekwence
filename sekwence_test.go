@@ -4,6 +4,13 @@ import (
 	"testing"
 )
 
+type stringRangeCase struct {
+	from    string
+	to      string
+	exclude bool
+	result  []string
+}
+
 var (
 	succCases = map[string]string{
 		"0":  "1",
@@ -11,6 +18,11 @@ var (
 		"9z": "10a",
 		"A9": "B0",
 		"ZZ": "AAA",
+	}
+
+	stringRangeCases = []stringRangeCase{
+		{"a0", "b4", false, []string{"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8", "a9", "b0", "b1", "b2", "b3", "b4"}},
+		{"7a", "8z", false, []string{"7a", "7b", "7c", "7d", "7e", "7f", "7g", "7h", "7i", "7j", "7k", "7l", "7m", "7n", "7o", "7p", "7q", "7r", "7s", "7t", "7u", "7v", "7w", "7x", "7y", "7z", "8a", "8b", "8c", "8d", "8e", "8f", "8g", "8h", "8i", "8j", "8k", "8l", "8m", "8n", "8o", "8p", "8q", "8r", "8s", "8t", "8u", "8v", "8w", "8x", "8y", "8z"}},
 	}
 )
 
@@ -119,7 +131,6 @@ func TestReverseSlice(t *testing.T) {
 }
 
 func TestSucc(t *testing.T) {
-
 	for arg, exp := range succCases {
 		res, err := Succ(arg)
 		if err != nil {
@@ -127,6 +138,20 @@ func TestSucc(t *testing.T) {
 		}
 		if res != exp {
 			t.Errorf(`Succ("%s") is expected to be "%s" but got "%s"`, arg, exp, res)
+		}
+	}
+}
+
+func TestStringRange(t *testing.T) {
+	for _, tc := range stringRangeCases {
+		res, err := StringRange(tc.from, tc.to, tc.exclude)
+		if err != nil {
+			t.Errorf("Error during StringRange(%v, %v, %v): %s", tc.from, tc.to, tc.exclude, err)
+		}
+		for i := 0; i < len(res); i++ {
+			if res[i] != tc.result[i] {
+				t.Errorf("Invalid StringRange item at pos %d: expected %v but got %v", i, tc.result[i], res[i])
+			}
 		}
 	}
 }

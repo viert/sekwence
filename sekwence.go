@@ -112,3 +112,25 @@ func Succ(s string) (string, error) {
 	reverseRuneSlice(symbolList)
 	return string(symbolList), nil
 }
+
+// StringRange implements ruby-like string range generators
+// i.e. ruby's "a0".."e4" equals to StringRange("a0", "e4", false)
+// exclude params indicates that value of "to" should be excluded
+//
+func StringRange(from string, to string, exclude bool) ([]string, error) {
+	var err error
+
+	result := make([]string, 0)
+	for from != to && len(from) <= len(to) {
+		result = append(result, from)
+		from, err = Succ(from)
+		if err != nil {
+			return result, err
+		}
+	}
+
+	if from == to && !exclude {
+		result = append(result, from)
+	}
+	return result, nil
+}
