@@ -29,6 +29,15 @@ var (
 		"{a0..b4}":    []string{"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8", "a9", "b0", "b1", "b2", "b3", "b4"},
 		"{00..03,12}": []string{"00", "01", "02", "03", "12"},
 	}
+
+	bracesIndicesCases = map[string][]expressionIndex{
+		"host{00-12}{a,b,c}.example.com": []expressionIndex{
+			{start: 4, end: 10},
+			{start: 11, end: 17},
+		},
+	}
+
+	bracesIndicesErrorCases = []string{"{noclosing", "noopening}", "{nested{pattern}}"}
 )
 
 func TestGetAlphabeth(t *testing.T) {
@@ -165,12 +174,32 @@ func TestExpandSinglePattern(t *testing.T) {
 	for arg, exp := range expandSinglePatternCases {
 		res, err := expandSinglePattern(arg)
 		if err != nil {
-			t.Errorf("Error during ExpandSinglePattern(%v): %s", arg, err)
+			t.Errorf("Error during expandSinglePattern(%v): %s", arg, err)
 		}
 		for i := 0; i < len(res); i++ {
 			if res[i] != exp[i] {
-				t.Errorf("Invalid ExpandSinglePattern result item at pos %d: expected %v but got %v", i, exp[i], res[i])
+				t.Errorf("Invalid expandSinglePattern result item at pos %d: expected %v but got %v", i, exp[i], res[i])
 			}
+		}
+	}
+}
+
+func TestGetBracesIndices(t *testing.T) {
+	for arg, exp := range bracesIndicesCases {
+		res, err := getBracesIndices(arg)
+		if err != nil {
+			t.Errorf("Error during getBracesIndices(%v): %s", arg, err)
+		}
+		for i := 0; i < len(res); i++ {
+			if res[i].start != exp[i].start || res[i].end != exp[i].end {
+				t.Errorf("Invalid expandSinglePattern result item at pos %d: expected %v but got %v", i, exp[i], res[i])
+			}
+		}
+	}
+	for _, arg := range bracesIndicesErrorCases {
+		_, err := getBracesIndices(arg)
+		if err == nil {
+			t.Errorf(`getBracesIndices("%s") should throw an error`, arg)
 		}
 	}
 }

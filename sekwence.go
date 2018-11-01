@@ -2,9 +2,15 @@ package sekwence
 
 import (
 	"fmt"
+	"github.com/golang-collections/collections/stack"
 	"regexp"
 	"strings"
 )
+
+type expressionIndex struct {
+	start int
+	end   int
+}
 
 var (
 	asciiLowerCase = []rune("abcdefghijklmnopqrstuvwxyz")
@@ -161,4 +167,35 @@ func expandSinglePattern(pattern string) ([]string, error) {
 		}
 	}
 	return result, nil
+}
+
+func getBracesIndices(pattern string) ([]expressionIndex, error) {
+	stack := stack.New()
+	indices := make([]expressionIndex, 0)
+	currentIndex := expressionIndex{start: -1, end: -1}
+
+	for ind, sym := range pattern {
+		if sym == '{' {
+			stack.Push(true)
+			currentIndex.start = ind
+		} else if sym == '}' {
+			val := stack.Pop()
+			if val == nil {
+				return nil, fmt.Errorf("closing brace without opening one at %d", ind)
+			}
+			currentIndex.end = ind
+		}
+
+		if currentIndex.end > 0 {
+			if stack.Len() != 0 {
+				return nil, fmt.Errorf("nested patterns are not allowed")
+			}
+			indices = append(indices, currentIndex)
+			currentIndex = expressionIndex{start: -1, end: -1}
+		}
+	}
+	if stack.Len() > 0 {
+		return nil, fmt.Errorf("closing brace expected at the end of pattern")
+	}
+	return indices, nil
 }
