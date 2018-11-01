@@ -31,13 +31,30 @@ var (
 	}
 
 	bracesIndicesCases = map[string][]expressionIndex{
-		"host{00-12}{a,b,c}.example.com": []expressionIndex{
-			{start: 4, end: 10},
-			{start: 11, end: 17},
+		"host{00..12}{a,b,c}.example.com": []expressionIndex{
+			{start: 4, end: 11},
+			{start: 12, end: 18},
 		},
 	}
 
 	bracesIndicesErrorCases = []string{"{noclosing", "noopening}", "{nested{pattern}}"}
+
+	mainCases = map[string][]string{
+		"host{00..03}{a,b,c}.example.com": []string{
+			"host00a.example.com",
+			"host00b.example.com",
+			"host00c.example.com",
+			"host01a.example.com",
+			"host01b.example.com",
+			"host01c.example.com",
+			"host02a.example.com",
+			"host02b.example.com",
+			"host02c.example.com",
+			"host03a.example.com",
+			"host03b.example.com",
+			"host03c.example.com",
+		},
+	}
 )
 
 func TestGetAlphabeth(t *testing.T) {
@@ -200,6 +217,20 @@ func TestGetBracesIndices(t *testing.T) {
 		_, err := getBracesIndices(arg)
 		if err == nil {
 			t.Errorf(`getBracesIndices("%s") should throw an error`, arg)
+		}
+	}
+}
+
+func TestExpandPattern(t *testing.T) {
+	for arg, exp := range mainCases {
+		res, err := ExpandPattern(arg)
+		if err != nil {
+			t.Errorf("Error during ExpandPattern(%v): %s", arg, err)
+		}
+		for i := 0; i < len(res); i++ {
+			if res[i] != exp[i] {
+				t.Errorf("Invalid expandSinglePattern result item at pos %d: expected %v but got %v", i, exp[i], res[i])
+			}
 		}
 	}
 }

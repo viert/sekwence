@@ -199,3 +199,34 @@ func getBracesIndices(pattern string) ([]expressionIndex, error) {
 	}
 	return indices, nil
 }
+
+// ExpandPattern expands the whole pattern recursively
+// and returns all the resulting matches
+func ExpandPattern(pattern string) ([]string, error) {
+	indices, err := getBracesIndices(pattern)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(indices) == 0 {
+		// no range expressions found
+		return []string{pattern}, nil
+	}
+
+	results := make([]string, 0)
+	ind := indices[0]
+	tokens, err := expandSinglePattern(pattern[ind.start+1 : ind.end])
+	if err != nil {
+		return nil, err
+	}
+
+	for _, token := range tokens {
+		replaced := pattern[:ind.start] + token + pattern[ind.end+1:]
+		preliminary, err := ExpandPattern(replaced)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, preliminary...)
+	}
+	return results, nil
+}
